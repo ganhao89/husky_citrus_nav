@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include <tf/transform_broadcaster.h>
 
 class RobotDriver
 {
@@ -33,8 +34,10 @@ public:
 
 void poseCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
-   
- 
+   double odom_x = msg->pose.pose.position.x;
+   double odom_y = msg->pose.pose.position.y;
+   double odom_z = msg->pose.pose.position.z;
+   double odom_quat
 }
 
 int main(int argc, char** argv)
@@ -47,7 +50,7 @@ int main(int argc, char** argv)
   RobotDriver driver(pub);
   
   //! We will subscribe to the "/odometry/filtered" topic to get robot pose data
-  ros::Subscriber robot_pose = nh.subscribe("/odometry/filtered",1, poseCallback);
+  ros::Subscriber robot_pose = nh.subscribe("/odometry/filtered",10, poseCallback);
   ros::spin();
   return 0;
 }
