@@ -34,23 +34,36 @@ public:
 
 void poseCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
-   double odom_x = msg->pose.pose.position.x;
-   double odom_y = msg->pose.pose.position.y;
-   double odom_z = msg->pose.pose.position.z;
-   double odom_quat
+   // store the pose of the robot
+   double odom_p_x = msg->pose.pose.position.x;
+   double odom_p_y = msg->pose.pose.position.y;
+   double odom_p_z = msg->pose.pose.position.z;
+   double odom_o_x = msg->pose.pose.orientation.x;
+   double odom_o_y = msg->pose.pose.orientation.y;
+   double odom_o_z = msg->pose.pose.orientation.z;
+   double odom_o_w = msg->pose.pose.orientation.w;
+   // store the linear velocities and angular velocity of the robot
+   double odom_l_x = msg->twist.twist.linear.x;
+   double odom_l_y = msg->twist.twist.linear.y;
+   double odom_a_z = msg->twist.twist.angular.z;
 }
 
 int main(int argc, char** argv)
 {
   //init the ROS node
   ros::init(argc, argv, "robot_driver");
-  ros::NodeHandle sub;
-  ros::NodeHandle pub;
+  ros::NodeHandle sub_odo;
+  ros::NodeHandle pub_cmd;
   // Create a RobotDriver object to store the publisher
-  RobotDriver driver(pub);
-  
-  //! We will subscribe to the "/odometry/filtered" topic to get robot pose data
-  ros::Subscriber robot_pose = nh.subscribe("/odometry/filtered",10, poseCallback);
-  ros::spin();
+  RobotDriver driver(pub_cmd);
+  ros::rate r(30);
+  while (ros::ok())
+  {
+     //! We will subscribe to the "/odometry/filtered" topic to get robot pose data
+     ros::Subscriber robot_pose = sub_odo.subscribe("/odometry/filtered",1, poseCallback);
+     ros::spinOnce();
+     driver.publishSpeed();
+     r.sleep();
+  }
   return 0;
 }
