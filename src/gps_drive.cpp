@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <tf/transform_broadcaster.h>
 
 class RobotDriver
@@ -48,6 +49,13 @@ void poseCallback(const nav_msgs::Odometry::ConstPtr& msg)
    double odom_a_z = msg->twist.twist.angular.z;
 }
 
+void gpsCallback(const sensor_msgs::NavSatFix::ConstPt& filtered_gps)
+{
+  double gps_lat = filtered_gps->latitude;
+  double gps_lon = filtered_gps->longitude;
+  double gps_alt = filtered_gps->altitude;
+}
+
 int main(int argc, char** argv)
 {
   //init the ROS node
@@ -60,7 +68,9 @@ int main(int argc, char** argv)
   while (ros::ok())
   {
      //! We will subscribe to the "/odometry/filtered" topic to get robot pose data
-     ros::Subscriber robot_pose = sub_odo.subscribe("/odometry/filtered",1, poseCallback);
+     ros::Subscriber robot_pose = sub_odo.subscribe("/odometry/filtered", 1, poseCallback);
+     ros::Subscriber robot_gps = sub_odo.subscribe("/gps/filtered", 1, gpsCallback);
+     
      ros::spinOnce();
      driver.publishSpeed();
      r.sleep();
