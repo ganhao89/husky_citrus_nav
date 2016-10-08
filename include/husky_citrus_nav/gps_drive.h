@@ -47,6 +47,8 @@ class GPSDrive
     double heading_current_;
     //! Expected heading
     double heading_waypoint_;
+    //! robot wheel speed 
+    geometry_msgs::Twist base_cmd;
 
   
 };

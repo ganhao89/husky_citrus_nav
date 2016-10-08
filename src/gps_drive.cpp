@@ -1,14 +1,76 @@
-#include <iostream>
-
-#include <ros/ros.h>
-#include <geometry_msgs/Twist.h>
-#include <geometry_msgs/PointStamped.h>
-#include <nav_msgs/Odometry.h>
-#include <sensor_msgs/NavSatFix.h>
-#include <tf/transform_broadcaster.h>
+#include "husky_citrus_nav/gps_drive.h"
 
 namespace RobotLocalization
 {
+  GPSDrive::GPSDrive():
+    x_current_(0.0),
+    y_current_(0.0),
+    //! Variables for waypoint location
+    x_waypoint_(0.0),
+    y_waypoint_(0.0),
+    //! Current heading
+    heading_current_(0.0),
+    //! Expected heading
+    heading_waypoint_(0.0);
+    
+
+  GPSDrive::~GPSDrive()
+  {
+  }
+
+  void GPSDrive::run()
+  {
+    //init the ROS node
+    ros::init(argc, argv, "robot_driver");
+    ros::NodeHandle sub_odo;
+    ros::NodeHandle pub_cmd;
+    // Create a RobotDriver object to store the publisher
+    RobotDriver driver(pub_cmd);
+    ros::rate r(30);
+    while (ros::ok())
+    {
+      //! We will subscribe to the "/odometry/filtered" topic to get robot pose data
+      ros::Subscriber robot_pose = sub_odo.subscribe("/odometry/filtered", 1, &GPSDrive::poseCallback, this);
+      ros::Subscriber robot_gps = sub_odo.subscribe("/gps/filtered", 1, &GPSDrive::gpsCallback, this);
+      ros::Subscriber robot_waypoint=sub_odo.subscribe("/waypoint", 1, GPSDrive::waypointCallback, this);
+      ros::spinOnce();
+      driver.publishSpeed();
+      r.sleep();
+    }  
+  }  
+  
+  void GPSDrive::computeCmd()
+  {
+  }
+  
+  void GPSDrive::poseCallback(const nav_msgs::Odometry::ConstPtr& msg)
+  {
+    // store the pose of the robot
+    double odom_p_x = msg->pose.pose.position.x;
+    double odom_p_y = msg->pose.pose.position.y;
+    double odom_p_z = msg->pose.pose.position.z;
+    double odom_o_x = msg->pose.pose.orientation.x;
+    double odom_o_y = msg->pose.pose.orientation.y;
+    double odom_o_z = msg->pose.pose.orientation.z;
+    double odom_o_w = msg->pose.pose.orientation.w;
+   // store the linear velocities and angular velocity of the robot
+    double odom_l_x = msg->twist.twist.linear.x;
+    double odom_l_y = msg->twist.twist.linear.y;
+    double odom_a_z = msg->twist.twist.angular.z;
+  }
+
+  void GPSDrive::gpsCallback(const sensor_msgs::NavSatFix::ConstPt& filtered_gps)
+  {
+    double gps_lat = filtered_gps->latitude;
+    double gps_lon = filtered_gps->longitude;
+    double gps_alt = filtered_gps->altitude;
+  }
+
+  void GPSDrive::waypointCallback(const geometry_msgs::PointStamped::ConstPt& waypoint)
+  {
+    double way_x_lon = waypoint->point.x;
+    double way_y_lat = waypoint->point.y;
+  }
 
 }
   
