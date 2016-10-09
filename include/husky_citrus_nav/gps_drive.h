@@ -49,6 +49,10 @@ class GPSDrive
     double heading_waypoint_;
     //! robot wheel speed 
     geometry_msgs::Twist base_cmd;
+    //! pid control parameters;
+    double Kp_;
+    double Kd_;
+    double Ki_;
 
   
 };

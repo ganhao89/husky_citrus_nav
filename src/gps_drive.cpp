@@ -11,8 +11,11 @@ namespace RobotLocalization
     //! Current heading
     heading_current_(0.0),
     //! Expected heading
-    heading_waypoint_(0.0);
-    
+    heading_waypoint_(0.0),
+    //! pid control parameters
+    Kp_(1.0),
+    Kd_(0.5),
+    Ki_(0.3);
 
   GPSDrive::~GPSDrive()
   {
@@ -22,19 +25,24 @@ namespace RobotLocalization
   {
     //init the ROS node
     ros::init(argc, argv, "robot_driver");
-    ros::NodeHandle sub_odo;
-    ros::NodeHandle pub_cmd;
-    // Create a RobotDriver object to store the publisher
-    RobotDriver driver(pub_cmd);
+    ros::NodeHandle nh;
+    ros::NodeHandle nh_priv("~");
+    
+    nh_priv.param("Kp", Kp_, 1.0);
+    nh_priv.param("Kd", Kd_, 0.5);
+    nh_priv.param("Ki", Ki_, 0.3);
+
+
     ros::rate r(30);
     while (ros::ok())
     {
       //! We will subscribe to the "/odometry/filtered" topic to get robot pose data
-      ros::Subscriber robot_pose = sub_odo.subscribe("/odometry/filtered", 1, &GPSDrive::poseCallback, this);
-      ros::Subscriber robot_gps = sub_odo.subscribe("/gps/filtered", 1, &GPSDrive::gpsCallback, this);
-      ros::Subscriber robot_waypoint=sub_odo.subscribe("/waypoint", 1, GPSDrive::waypointCallback, this);
+      ros::Subscriber robot_pose = nh.subscribe("/odometry/filtered", 1, &GPSDrive::poseCallback, this);
+      ros::Subscriber robot_gps = nh.subscribe("/gps/filtered", 1, &GPSDrive::gpsCallback, this);
+      ros::Subscriber robot_waypoint=nh.subscribe("/waypoint", 1, GPSDrive::waypointCallback, this);
       ros::spinOnce();
-      driver.publishSpeed();
+      ros::Publisher robot_driver=nh.advertise<geometry_msgs::Twist>("/twist_marker_server/cmd_vel", 1);
+      robot_driver.publish(base_cmd);
       r.sleep();
     }  
   }  
