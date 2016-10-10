@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   geometry_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -190,6 +191,7 @@ include_directories(
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(drive_base src/drive_base.cpp)
-target_link_libraries(drive_base ${catkin_LIBRARIES})
-ADD_DEPENDENCIES(drive_base husky_citrus_nav_generate_messages_cpp)
+
+add_executable(gps_frame_broadcaster src/gps_frame_broadcaster.cpp)
+target_link_libraries(gps_frame_broadcaster ${catkin_LIBRARIES})
+ADD_DEPENDENCIES(gps_frame_broadcaster husky_citrus_nav_generate_messages_cpp)
