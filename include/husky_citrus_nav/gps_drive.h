@@ -34,6 +34,9 @@ class GPSDrive
     //! Callback for gps/filtered data
     gpsCallback(const sensor_msgs::NavSatFix::ConstPt& filtered_gps)
 
+    //! Callback for getting initial GPS location
+    initgpsCallback(const sensor_msgs::NavSatFix::ConstPt& init_gps)
+
     //! Callback for waypoint data 
     void waypointCallback(const geometry_msgs::PointStamped::ConstPt& waypoint)
     
@@ -44,17 +47,24 @@ class GPSDrive
     double x_waypoint_;
     double y_waypoint_;
     //! Current heading
-    double heading_current_;
+    double tracking_;
     //! Expected heading
-    double heading_waypoint_;
+    double bearing_;
     //! robot wheel speed 
     geometry_msgs::Twist base_cmd;
     //! pid control parameters;
     double Kp_;
     double Kd_;
     double Ki_;
-
-  
+    //! initial GPS location
+    double init_gps_lat_;
+    double init_gps_lon_;
+    double init_gps_alt_;
+    //! x and y displacement in GPS initial position
+    dx_;
+    dy_;
+    //! counter
+    int count_;
 };
 
 } // namespace RobotLocalization
