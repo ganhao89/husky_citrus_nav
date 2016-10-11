@@ -1,4 +1,5 @@
 #include "husky_citrus_nav/gps_drive.h"
+#include <tf/transform_datatypes.h>
 
 namespace RobotLocalization
 {
@@ -49,22 +50,32 @@ namespace RobotLocalization
   
   void GPSDrive::computeCmd()
   {
+    
   }
   
   void GPSDrive::poseCallback(const nav_msgs::Odometry::ConstPtr& msg)
   {
     // store the pose of the robot
-    double odom_p_x = msg->pose.pose.position.x;
-    double odom_p_y = msg->pose.pose.position.y;
-    double odom_p_z = msg->pose.pose.position.z;
-    double odom_o_x = msg->pose.pose.orientation.x;
-    double odom_o_y = msg->pose.pose.orientation.y;
-    double odom_o_z = msg->pose.pose.orientation.z;
-    double odom_o_w = msg->pose.pose.orientation.w;
-   // store the linear velocities and angular velocity of the robot
-    double odom_l_x = msg->twist.twist.linear.x;
-    double odom_l_y = msg->twist.twist.linear.y;
-    double odom_a_z = msg->twist.twist.angular.z;
+    tf::Quaternion q(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    //double odom_p_x = msg->pose.pose.position.x;
+    //double odom_p_y = msg->pose.pose.position.y;
+    //double odom_p_z = msg->pose.pose.position.z;
+    //double odom_o_x = msg->pose.pose.orientation.x;
+    //double odom_o_y = msg->pose.pose.orientation.y;
+    //double odom_o_z = msg->pose.pose.orientation.z;
+    //double odom_o_w = msg->pose.pose.orientation.w;
+
+    // store the linear velocities and angular velocity of the robot
+
+    //double odom_l_x = msg->twist.twist.linear.x;
+    //double odom_l_y = msg->twist.twist.linear.y;
+    //double odom_a_z = msg->twist.twist.angular.z;
+
+    heading_current_ = roll;
+    
   }
 
   void GPSDrive::gpsCallback(const sensor_msgs::NavSatFix::ConstPt& filtered_gps)
@@ -72,6 +83,9 @@ namespace RobotLocalization
     double gps_lat = filtered_gps->latitude;
     double gps_lon = filtered_gps->longitude;
     double gps_alt = filtered_gps->altitude;
+    
+    x_current_ = gps_lon;
+    y_current_ = gps_lat;
   }
 
   void GPSDrive::waypointCallback(const geometry_msgs::PointStamped::ConstPt& waypoint)
