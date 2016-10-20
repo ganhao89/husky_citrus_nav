@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   geometry_msgs
+  sensor_msgs
   tf
 )
 
@@ -195,3 +196,7 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 add_executable(gps_frame_broadcaster src/gps_frame_broadcaster.cpp)
 target_link_libraries(gps_frame_broadcaster ${catkin_LIBRARIES})
 ADD_DEPENDENCIES(gps_frame_broadcaster husky_citrus_nav_generate_messages_cpp)
+
+add_executable(robot_initial_position src/robot_initial_position.cpp)
+target_link_libraries(robot_initial_position ${catkin_LIBRARIES})
+ADD_DEPENDENCIES(robot_initial_position husky_citrus_nav_generate_messages_cpp)
