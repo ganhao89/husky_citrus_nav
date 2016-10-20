@@ -8,7 +8,6 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <tf/transform_broadcaster.h>
-#include "robot_localization/navsat_conversions.h"
 namespace RobotLocalization
 {
 
@@ -51,7 +50,7 @@ class GPSDrive
     //! Expected heading
     double bearing_;
     //! robot wheel speed 
-    geometry_msgs::Twist base_cmd;
+    geometry_msgs::Twist base_cmd_;
     //! set PID controller parameters
     double dist_d_;
     double dist_i_;
@@ -70,8 +69,6 @@ class GPSDrive
     utm_dy_;
     //! counter
     int count_;
-    //! wheel speed twist
-    geometry_msgs::Twist base_cmd_;
     
 };
 

@@ -1,5 +1,7 @@
 #include "husky_citrus_nav/gps_drive.h"
 #include <tf/transform_datatypes.h>
+#include "robot_localization/navsat_conversions.h"
+#include <cmath>
 
 namespace RobotLocalization
 {
@@ -109,22 +111,7 @@ namespace RobotLocalization
     tf::Matrix3x3 m(q);
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
-    /*double odom_p_x = msg->pose.pose.position.x;
-    double odom_p_y = msg->pose.pose.position.y;
-    double odom_p_z = msg->pose.pose.position.z;
-    double odom_o_x = msg->pose.pose.orientation.x;
-    double odom_o_y = msg->pose.pose.orientation.y;
-    double odom_o_z = msg->pose.pose.orientation.z;
-    double odom_o_w = msg->pose.pose.orientation.w;
-
-    // store the linear velocities and angular velocity of the robot
-
-    double odom_l_x = msg->twist.twist.linear.x;
-    double odom_l_y = msg->twist.twist.linear.y;
-    double odom_a_z = msg->twist.twist.angular.z;*/
-
-    tracking_ = roll;
-    
+    tracking_ = roll;  
   }
 
   void GPSDrive::gpsCallback(const sensor_msgs::NavSatFix::ConstPt& filtered_gps)
