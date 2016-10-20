@@ -8,7 +8,7 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <tf/transform_broadcaster.h>
-
+#include "robot_localization/navsat_conversions.h"
 namespace RobotLocalization
 {
 
@@ -41,30 +41,38 @@ class GPSDrive
     void waypointCallback(const geometry_msgs::PointStamped::ConstPt& waypoint)
     
     //! Variables for current location
-    double x_current_;
-    double y_current_;
+    double utm_x_current_;
+    double utm_y_current_;
     //! Variables for waypoint location
-    double x_waypoint_;
-    double y_waypoint_;
+    double utm_x_waypoint_;
+    double utm_y_waypoint_;
     //! Current heading
     double tracking_;
     //! Expected heading
     double bearing_;
     //! robot wheel speed 
     geometry_msgs::Twist base_cmd;
-    //! pid control parameters;
+    //! set PID controller parameters
+    double dist_d_;
+    double dist_i_;
+    double theta_d_;
+    double theta_i_;
+    double dist_pre_;
+    double theta_pre_;
     double Kp_;
     double Kd_;
     double Ki_;
     //! initial GPS location
-    double init_gps_lat_;
-    double init_gps_lon_;
-    double init_gps_alt_;
+    double init_utm_y_;
+    double init_utm_x_;
     //! x and y displacement in GPS initial position
-    dx_;
-    dy_;
+    utm_dx_;
+    utm_dy_;
     //! counter
     int count_;
+    //! wheel speed twist
+    geometry_msgs::Twist base_cmd_;
+    
 };
 
 } // namespace RobotLocalization
