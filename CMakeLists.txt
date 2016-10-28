@@ -192,7 +192,8 @@ include_directories(
 # catkin_add_nosetests(test)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
-
+add_library(gps_drive src/gps_drive.cpp)
+add_dependencies(gps_drive husky_citrus_nav_generate_messages_cpp)
 
 add_executable(gps_frame_broadcaster src/gps_frame_broadcaster.cpp)
 target_link_libraries(gps_frame_broadcaster ${catkin_LIBRARIES})
@@ -203,5 +204,5 @@ target_link_libraries(robot_initial_position ${catkin_LIBRARIES})
 ADD_DEPENDENCIES(robot_initial_position husky_citrus_nav_generate_messages_cpp)
 
 add_executable(gps_drive_node src/gps_drive_node.cpp)
-target_link_libraries(gps_drive_node ${catkin_LIBRARIES})
+target_link_libraries(gps_drive_node gps_drive ${catkin_LIBRARIES})
 ADD_DEPENDENCIES(gps_drive_node husky_citrus_nav_generate_messages_cpp)

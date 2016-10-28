@@ -31,14 +31,16 @@ class GPSDrive
     void poseCallback(const nav_msgs::Odometry::ConstPtr& msg);
     
     //! Callback for gps/filtered data
-    gpsCallback(const sensor_msgs::NavSatFix::ConstPt& filtered_gps)
+    void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& filtered_gps);
 
     //! Callback for getting initial GPS location
-    initgpsCallback(const sensor_msgs::NavSatFix::ConstPt& init_gps)
+    void initgpsCallback(const sensor_msgs::NavSatFix::ConstPtr& init_gps);
 
     //! Callback for waypoint data 
-    void waypointCallback(const geometry_msgs::PointStamped::ConstPt& waypoint)
+    void waypointCallback(const geometry_msgs::PointStamped::ConstPtr& waypoint);
     
+    //! member function to compute bearing
+    double computeBearing(double x0, double y0, double x1, double y1);
     //! Variables for current location
     double utm_x_current_;
     double utm_y_current_;
@@ -65,10 +67,11 @@ class GPSDrive
     double init_utm_y_;
     double init_utm_x_;
     //! x and y displacement in GPS initial position
-    utm_dx_;
-    utm_dy_;
+    double utm_dx_;
+    double utm_dy_;
     //! counter
     int count_;
+
     
 };
 
