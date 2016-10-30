@@ -54,19 +54,29 @@ namespace RobotLocalization
     nh_priv.param("Kd", Kd_, 0.5);
     nh_priv.param("Ki", Ki_, 0.3);
     
-    ros::Subscriber robot_init_gps = nh.subscribe("/initGPS", 1, &GPSDrive::initgpsCallback, this);
-  
+    //! Wait for the initial GPS positon to arrive
+    //ros::Subscriber robot_init_gps = nh.subscribe("/initGPS", 1, &GPSDrive::initgpsCallback, this);
+    sensor_msgs::NavSatFix::ConstPtr initGPS_msg = ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/initGPS", ros::Duration(1000));
+    //! Convert the initial GPS coordinates to UTM coordinates
+    double init_gps_lat = initGPS_msg.latitude;
+    double init_gps_lon = initGPS_msg.longitude;
+    std::string utm_zone_tmp;
+    double utmX=0.0;
+    double utmY=0.0;
+    NavsatConversions::LLtoUTM(init_gps_lat,init_gps_lon,utmY,utmX,utm_zone_tmp);
+    init_utm_y_ = utmY;
+    init_utm_x_ = utmX;
+
+    //! We will subscribe to the "/odometry/filtered" topic to get robot pose data
+    ros::Subscriber robot_pose = nh.subscribe("/odometry/filtered", 1, &GPSDrive::poseCallback, this);
+    ros::Subscriber robot_gps = nh.subscribe("/gps/filtered", 1, &GPSDrive::gpsCallback, this);
+    ros::Subscriber robot_waypoint=nh.subscribe("/waypoint", 1, &GPSDrive::waypointCallback, this);
+    ros::Publisher robot_driver=nh.advertise<geometry_msgs::Twist>("/twist_marker_server/cmd_vel", 1);
+
     ros::Rate r(30);
     while (ros::ok())
     {
-      std::cout<<"entered the while loop"<<std::endl;
-      //! We will subscribe to the "/odometry/filtered" topic to get robot pose data
-      ros::Subscriber robot_init_gps = nh.subscribe("/initGPS", 1, &GPSDrive::initgpsCallback, this);
-      ros::Subscriber robot_pose = nh.subscribe("/odometry/filtered", 1, &GPSDrive::poseCallback, this);
-      ros::Subscriber robot_gps = nh.subscribe("/gps/filtered", 1, &GPSDrive::gpsCallback, this);
-      ros::Subscriber robot_waypoint=nh.subscribe("/waypoint", 1, &GPSDrive::waypointCallback, this);
-      ros::spin();
-      ros::Publisher robot_driver=nh.advertise<geometry_msgs::Twist>("/twist_marker_server/cmd_vel", 1);
+      ros::spinOnce(); 
       computeCmd();
       robot_driver.publish(base_cmd_);
       r.sleep();
@@ -121,26 +131,33 @@ namespace RobotLocalization
 
   void GPSDrive::gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& filtered_gps)
   {
-    double gps_lat = filtered_gps->latitude;
-    double gps_lon = filtered_gps->longitude;
-    std::cout<<gps_lat<<"     "<<gps_lon<<std::endl;
-    double utmX=0.0;
-    double utmY=0.0;
-    std::string utm_zone_tmp;
-    NavsatConversions::LLtoUTM(gps_lat,gps_lon,utmY,utmX,utm_zone_tmp);
-    std::cout<<utmX<<"     "<<utmY<<std::endl;
-    if (count_ < 1)
-    {
-      utm_dx_ = utmX - init_utm_x_;
-      utm_dy_ = utmY - init_utm_y_;
-      count_=count_+1;
-    }
+   bool good_gps = (!std::isnan(filtered_gps->altitude) &&
+                    !std::isnan(filtered_gps->latitude) &&
+                    !std::isnan(filtered_gps->longitude));
+   
+   if(good_gps)
+   {
+      double gps_lat = filtered_gps->latitude;
+      double gps_lon = filtered_gps->longitude;
+      std::cout<<gps_lat<<"     "<<gps_lon<<std::endl;
+      double utmX=0.0;
+      double utmY=0.0;
+      std::string utm_zone_tmp;
+      NavsatConversions::LLtoUTM(gps_lat,gps_lon,utmY,utmX,utm_zone_tmp);
+      std::cout<<utmX<<"     "<<utmY<<std::endl;
+      if (count_ < 1)
+      {
+        utm_dx_ = utmX - init_utm_x_;
+        utm_dy_ = utmY - init_utm_y_;
+        count_=count_+1;
+      }
 
-    utm_x_current_ = utmX - utm_dx_;
-    utm_y_current_ = utmY - utm_dy_;
-    std::cout<<utm_x_current_<<std::endl;
-    std::cout<<utm_y_current_<<std::endl;
-    std::cout<<"gps received"<<std::endl;
+      utm_x_current_ = utmX - utm_dx_;
+      utm_y_current_ = utmY - utm_dy_;
+      std::cout<<utm_x_current_<<std::endl;
+      std::cout<<utm_y_current_<<std::endl;
+      std::cout<<"gps received"<<std::endl;
+   }
   }
 
   void GPSDrive::initgpsCallback(const sensor_msgs::NavSatFix::ConstPtr& init_gps)
