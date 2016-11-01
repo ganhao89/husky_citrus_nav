@@ -17,8 +17,8 @@ namespace RobotLocalization
     bearing_(0.0),
     //! pid control parameters
     Kp_(0.5),
-    Kd_(0.2),
-    Ki_(0.1),
+    Kd_(1.0),
+    Ki_(0.01),
     dist_d_(0.0),
     dist_i_(0.0),
     theta_d_(0.0),
@@ -50,9 +50,9 @@ namespace RobotLocalization
     ros::NodeHandle nh;
     ros::NodeHandle nh_priv("~");
     
-    nh_priv.param("Kp", Kp_, 1.0);
-    nh_priv.param("Kd", Kd_, 0.5);
-    nh_priv.param("Ki", Ki_, 0.3);
+    nh_priv.param("Kp", Kp_, 0.5);
+    nh_priv.param("Kd", Kd_, 1.0);
+    nh_priv.param("Ki", Ki_, 0.01);
     
     //! Wait for the initial GPS positon to arrive
     //ros::Subscriber robot_init_gps = nh.subscribe("/initGPS", 1, &GPSDrive::initgpsCallback, this);
@@ -103,15 +103,20 @@ namespace RobotLocalization
     std::cout<<"bearing = "<<bearing_<<std::endl;
     std::cout<<"tracking= "<<tracking_<<std::endl;
     double dist = sqrt(pow((x1-x0),2)+pow((y1-y0),2));
-    double theta = bearing_ - tracking_;
+    double theta = tracking_ - bearing_;
+    if (theta<-180.0){
+	theta = theta+360.0;
+    }else if (theta>180.0){ 
+	theta = theta-360.0;
+    }
     dist_d_ = dist-dist_pre_;
     theta_d_ = theta - theta_pre_;
-    double x_speed = (Kp_*dist)/100;
+    double x_speed = (Kp_*dist)/5.0;
     if (x_speed > 0.8)
     {
        x_speed = 0.8;
     }
-    double z_angular = (Kp_*theta)/250;
+    double z_angular = (Kp_*theta+Kd_*theta_d_+Ki_*theta_i_)/45.0;
     if (z_angular>0.8)
     {
        z_angular=0.8;
@@ -128,7 +133,7 @@ namespace RobotLocalization
     base_cmd_.linear.y = 0.0;
     base_cmd_.angular.z = -z_angular;
     std::cout<<"base_cmd_.x = " << x_speed<<std::endl;
-    std::cout<<"base_cmd.angular = "<<-z_angular<<std::endl;
+    std::cout<<"base_cmd.angular = "<<z_angular<<std::endl;
     
   }
   
@@ -145,8 +150,8 @@ namespace RobotLocalization
     m.getRPY(roll, pitch, yaw);
     std::cout<<"yaw = "<<yaw<<std::endl;
     yaw=yaw/3.141592653*180.0;
-    if (yaw<0){
-      yaw=-yaw;} else{yaw=360-yaw;}
+    if (yaw<0.0){
+      yaw=-yaw;} else{yaw=360.0-yaw;}
     tracking_ = yaw; 
     std::cout<<"odometry received"<<std::endl; 
     std::cout<<"tracking = "<<tracking_<<std::endl;
