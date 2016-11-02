@@ -183,12 +183,12 @@ namespace RobotLocalization
       std::string utm_zone_tmp;
       NavsatConversions::LLtoUTM(gps_lat,gps_lon,utmY,utmX,utm_zone_tmp);
       std::cout<<utmX<<"     "<<utmY<<std::endl;
-      if (count_ < 1)
+      /*if (count_ < 1)
       {
         utm_dx_ = utmX - init_utm_x_;
         utm_dy_ = utmY - init_utm_y_;
         count_=count_+1;
-      }
+      }*/
 
       utm_x_current_ = utmX - utm_dx_;
       utm_y_current_ = utmY - utm_dy_;
