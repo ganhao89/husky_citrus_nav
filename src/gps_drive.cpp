@@ -2,7 +2,7 @@
 #include <tf/transform_datatypes.h>
 #include "robot_localization/navsat_conversions.h"
 #include <cmath>
-
+#include <time.h>
 namespace RobotLocalization
 {
   GPSDrive::GPSDrive():
@@ -11,6 +11,8 @@ namespace RobotLocalization
     //! Variables for waypoint location
     utm_x_waypoint_(0.0),
     utm_y_waypoint_(0.0),
+    waypoint_status_(false);
+    waypoint_arrived_(false);
     //! Current heading
     tracking_(0.0),
     //! Expected heading
@@ -32,11 +34,9 @@ namespace RobotLocalization
     utm_dx_(0.0),
     utm_dy_(0.0),
     //! counter
-    count_(0)
-    //! base command
-    //base_cmd_.linear.x(0.0),
-    //base_cmd_.linear.y(0.0),
-    //base_cmd_.angular.z(0.0)
+    count_(0);
+    //! evaluate position error if true
+    evalute_(false)
     {
     }
   GPSDrive::~GPSDrive()
@@ -53,6 +53,7 @@ namespace RobotLocalization
     nh_priv.param("Kp", Kp_, 0.5);
     nh_priv.param("Kd", Kd_, 0.1);
     nh_priv.param("Ki", Ki_, 0.01);
+    nh_priv.param("evalute",evalute_, false);
     
     //! Wait for the initial GPS positon to arrive
     //ros::Subscriber robot_init_gps = nh.subscribe("/initGPS", 1, &GPSDrive::initgpsCallback, this);
@@ -76,7 +77,7 @@ namespace RobotLocalization
     ros::Subscriber robot_gps = nh.subscribe("/gps/filtered", 1, &GPSDrive::gpsCallback, this);
     ros::Subscriber robot_waypoint=nh.subscribe("/waypoint", 1, &GPSDrive::waypointCallback, this);
     ros::Publisher robot_driver=nh.advertise<geometry_msgs::Twist>("/twist_marker_server/cmd_vel", 1);
-
+    
     ros::Rate r(10);
     while (ros::ok())
     {
@@ -93,8 +94,6 @@ namespace RobotLocalization
     double y0 = utm_y_current_;
     double x1 = utm_x_waypoint_;
     double y1 = utm_y_waypoint_;
-    //std::cout<<"x1 = "<<x1<<std::endl;
-    //std::cout<<"y1 = "<<y1<<std::endl;
     if (x1==0 || y1 ==0){
        x1=x0;
        y1=y0;
@@ -134,7 +133,14 @@ namespace RobotLocalization
     if (dist<0.2){
 	x_speed=0.0;
 	z_angular=0.0;
-    }
+	if (waypoint_status_ == true)
+	{
+	  waypoint_arrived_ = true;
+	}
+    }else{
+	  waypoint_arrived_= false;
+	 }
+
     dist_pre_ = dist;
     theta_pre_ = theta;
     dist_i_ = dist_i_+dist;
@@ -146,15 +152,12 @@ namespace RobotLocalization
     std::cout<<"base_cmd.angular = "<<z_angular<<std::endl;
     
   }
-  
+   
+
   void GPSDrive::poseCallback(const nav_msgs::Odometry::ConstPtr& msg)
   {
     // store the pose of the robot
     tf::Quaternion q(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
-   /* std::cout<<"ox="<<msg->pose.pose.orientation.x<<std::endl;
-    std::cout<<"oy="<<msg->pose.pose.orientation.y<<std::endl;
-    std::cout<<"oz="<<msg->pose.pose.orientation.z<<std::endl;
-    std::cout<<"ow="<<msg->pose.pose.orientation.w<<std::endl;*/
     tf::Matrix3x3 m(q);
     double roll, pitch, yaw;
     m.getRPY(roll, pitch, yaw);
@@ -163,8 +166,6 @@ namespace RobotLocalization
     if (yaw<0.0){
       yaw=-yaw;} else{yaw=360.0-yaw;}
     tracking_ = yaw; 
-    //std::cout<<"odometry received"<<std::endl; 
-    //std::cout<<"tracking = "<<tracking_<<std::endl;
   }
 
   void GPSDrive::gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& filtered_gps)
@@ -194,10 +195,7 @@ namespace RobotLocalization
       utm_y_current_ = utmY - utm_dy_;
       utm_x_current_ = utm_x_current_- init_utm_x_;
       utm_y_current_ = utm_y_current_- init_utm_y_;
-      std::cout<<"gps received"<<std::endl;
-      //std::cout<<"utm_x_current_ = "<<utm_x_current_<<std::endl;
-      //std::cout<<"utm_y_current_ = "<<utm_y_current_<<std::endl;
-      
+      std::cout<<"gps received"<<std::endl;   
    }
   }
 
@@ -219,10 +217,13 @@ namespace RobotLocalization
   {
     // Get the waypoint in the UTM frame
     // NOTE: you must select the UTM frame option for the Click publish plugin in Mapviz
-    utm_x_waypoint_ = waypoint->point.x;
-    utm_y_waypoint_ = waypoint->point.y;
-    //std::cout<<"utm_x_waypoint_ = "<<utm_x_waypoint_<<std::endl;
-    //std::cout<<"utm_y_waypoint_ = "<<utm_y_waypoint_<<std::endl;
+     bool good_waypoint = (!std::isnan(waypoint->point.x) &&
+                    !std::isnan(waypoint->point.y));
+    if (good_waypoint){
+      utm_x_waypoint_ = waypoint->point.x;
+      utm_y_waypoint_ = waypoint->point.y;
+    }
+    if (utm_x_waypoint_ !=0 || utm_y_waypoint_ !=0){waypoint_received_=true;}
   }
   
   double GPSDrive::computeBearing(double x0, double y0, double x1, double y1)
@@ -234,6 +235,38 @@ namespace RobotLocalization
    if (theta < 0.0)
        theta += TWOPI;
    return RAD2DEG * theta;
+  }
+
+  double GPSDrive::evalutePosition(bool evaluate)
+  {
+    if (evalute==true && waypoint_arrived==true)
+    {
+      sensor_msgs::NavSatFix::ConstPtr fixGPS_msg
+      sensor_msgs::NavSatFix::ConstPtr filteredGPS_msg
+      int counter=0;
+      double gps_lat_ave = 0.0;
+      double gps_lon_ave = 0.0;
+      
+      while(counter<50)
+      {
+        fixGPS_msg = ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/fix", ros::Duration(2));
+        double gpsfix_lat = fixGPS_msg->latitude;
+        double gpsfix_lon = fixGPS_msg->longitude;
+	gps_lat_ave += gpsfix_lat;
+	gps_lon_ave += gpsfix_lon;
+	counter++;
+	sleep(1);
+      }
+    
+    filteredGPS_msg = ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/filtered", ros::Duration(10));
+    double gpsfiltered_lat = filteredGPS_msg->latitude;
+    double gpsfiltered_lon = filteredGPS_msg->longitude;
+    std::string utm_zone_tmp;
+    NavsatConversions::LLtoUTM(gps_lat_ave,gps_lon_ave,utmY_ave,utmX_ave,utm_zone_tmp);
+    NavsatConversions::LLtoUTM(gpsfiltered_lat,gpsfiltered_lon,utmY_filtered,utmX_filtered,utm_zone_tmp);
+    double error= sqrt(pow((utmY_ave-utmY_filtered),2)+pow((utmX_ave-utmX_filtered),2));
+    }
+    return error;
   }
 
 }

@@ -41,12 +41,19 @@ class GPSDrive
     
     //! member function to compute bearing
     double computeBearing(double x0, double y0, double x1, double y1);
+
+    //! member function to evalute the localization accuracy
+    double evalutePosition(bool evaluate);
     //! Variables for current location
     double utm_x_current_;
     double utm_y_current_;
     //! Variables for waypoint location
     double utm_x_waypoint_;
     double utm_y_waypoint_;
+    //! waypoint status: false->not received; true->received
+    bool waypoint_status_;
+    //! status indicating if the robot has arrived the waypoint
+    bool waypoint_arrived_;
     //! Current heading
     double tracking_;
     //! Expected heading
@@ -71,7 +78,8 @@ class GPSDrive
     double utm_dy_;
     //! counter
     int count_;
-
+    //! evaluate the position accuracy if TRUE
+    bool evalute_;
     
 };
 
