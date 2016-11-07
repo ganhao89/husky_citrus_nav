@@ -11,8 +11,8 @@ namespace RobotLocalization
     //! Variables for waypoint location
     utm_x_waypoint_(0.0),
     utm_y_waypoint_(0.0),
-    waypoint_status_(false);
-    waypoint_arrived_(false);
+    waypoint_status_(false),
+    waypoint_arrived_(false),
     //! Current heading
     tracking_(0.0),
     //! Expected heading
@@ -34,9 +34,9 @@ namespace RobotLocalization
     utm_dx_(0.0),
     utm_dy_(0.0),
     //! counter
-    count_(0);
+    count_(0),
     //! evaluate position error if true
-    evalute_(false)
+    evalute_(true)
     {
     }
   GPSDrive::~GPSDrive()
@@ -53,7 +53,7 @@ namespace RobotLocalization
     nh_priv.param("Kp", Kp_, 0.5);
     nh_priv.param("Kd", Kd_, 0.1);
     nh_priv.param("Ki", Ki_, 0.01);
-    nh_priv.param("evalute",evalute_, false);
+    nh_priv.param("evalute",evalute_, true);
     
     //! Wait for the initial GPS positon to arrive
     //ros::Subscriber robot_init_gps = nh.subscribe("/initGPS", 1, &GPSDrive::initgpsCallback, this);
@@ -84,6 +84,7 @@ namespace RobotLocalization
       ros::spinOnce(); 
       computeCmd();
       robot_driver.publish(base_cmd_);
+      evaluatePosition();
       r.sleep();
     }  
   }  
@@ -223,7 +224,7 @@ namespace RobotLocalization
       utm_x_waypoint_ = waypoint->point.x;
       utm_y_waypoint_ = waypoint->point.y;
     }
-    if (utm_x_waypoint_ !=0 || utm_y_waypoint_ !=0){waypoint_received_=true;}
+    if (utm_x_waypoint_ !=0 || utm_y_waypoint_ !=0){waypoint_status_=true;}
   }
   
   double GPSDrive::computeBearing(double x0, double y0, double x1, double y1)
@@ -237,13 +238,15 @@ namespace RobotLocalization
    return RAD2DEG * theta;
   }
 
-  double GPSDrive::evalutePosition(bool evaluate)
+  double GPSDrive::evaluatePosition()
   {
-    if (evalute==true && waypoint_arrived==true)
+    double error=0.0;
+    int counter=0;
+    if (evalute_==true && waypoint_arrived_==true)
     {
-      sensor_msgs::NavSatFix::ConstPtr fixGPS_msg
-      sensor_msgs::NavSatFix::ConstPtr filteredGPS_msg
-      int counter=0;
+      sensor_msgs::NavSatFix::ConstPtr fixGPS_msg=ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/fix", ros::Duration(2));
+      sensor_msgs::NavSatFix::ConstPtr filteredGPS_msg=ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/filtered", ros::Duration(10));
+      
       double gps_lat_ave = 0.0;
       double gps_lon_ave = 0.0;
       
@@ -257,15 +260,22 @@ namespace RobotLocalization
 	counter++;
 	sleep(1);
       }
-    
-    filteredGPS_msg = ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/filtered", ros::Duration(10));
-    double gpsfiltered_lat = filteredGPS_msg->latitude;
-    double gpsfiltered_lon = filteredGPS_msg->longitude;
-    std::string utm_zone_tmp;
-    NavsatConversions::LLtoUTM(gps_lat_ave,gps_lon_ave,utmY_ave,utmX_ave,utm_zone_tmp);
-    NavsatConversions::LLtoUTM(gpsfiltered_lat,gpsfiltered_lon,utmY_filtered,utmX_filtered,utm_zone_tmp);
-    double error= sqrt(pow((utmY_ave-utmY_filtered),2)+pow((utmX_ave-utmX_filtered),2));
+      gps_lat_ave=gps_lat_ave/50.0;
+      gps_lon_ave=gps_lon_ave/50.0;
+      filteredGPS_msg = ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/filtered", ros::Duration(10));
+      double gpsfiltered_lat = filteredGPS_msg->latitude;
+      double gpsfiltered_lon = filteredGPS_msg->longitude;
+      std::string utm_zone_tmp;
+      double utmX_ave=0.0;
+      double utmY_ave=0.0;
+      double utmX_filtered=0.0;
+      double utmY_filtered=0.0;
+      NavsatConversions::LLtoUTM(gps_lat_ave,gps_lon_ave,utmY_ave,utmX_ave,utm_zone_tmp);
+      NavsatConversions::LLtoUTM(gpsfiltered_lat,gpsfiltered_lon,utmY_filtered,utmX_filtered,utm_zone_tmp);
+      error= sqrt(pow((utmY_ave-utmY_filtered),2)+pow((utmX_ave-utmX_filtered),2));
+      std::cout<<"\n"<<"\n"<<"\n"<<std::endl;
     }
+    std::cout<<"the evaluated error is = "<<error<<std::endl;
     return error;
   }
 
