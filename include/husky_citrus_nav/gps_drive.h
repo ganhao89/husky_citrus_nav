@@ -44,6 +44,8 @@ class GPSDrive
 
     //! member function to evalute the localization accuracy
     double evalutePosition(bool evaluate);
+    //! member function for triggering the canon camer to acquire images
+    void imgAcquire();
     //! Variables for current location
     double utm_x_current_;
     double utm_y_current_;

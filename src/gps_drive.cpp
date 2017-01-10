@@ -3,6 +3,8 @@
 #include "robot_localization/navsat_conversions.h"
 #include <cmath>
 #include <time.h>
+#include <stdlib.h>
+#include <string>
 namespace RobotLocalization
 {
   GPSDrive::GPSDrive():
@@ -277,6 +279,16 @@ namespace RobotLocalization
     }
     std::cout<<"the evaluated error is = "<<error<<std::endl;
     return error;
+  }
+
+  void GPSDrive::imgAcquire()
+  {
+    sensor_msgs::NavSatFix::ConstPtr filteredGPS_msg=ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/filtered", ros::Duration(10));
+    std::string gps_lat = std::to_string(filteredGPS_msg->latitude);
+    std::string gps_lon = std::to_string(filteredGPS_msg->longitude);
+    std::string filename = gps_lat+"+"+gps_lon;
+    std::string gphoto_capture = "gphoto2 --capture-image-and-download --filename="+filename+".jpg";
+    system(gphoto_capture.c_str());
   }
 
 }
