@@ -86,7 +86,8 @@ namespace RobotLocalization
       ros::spinOnce(); 
       computeCmd();
       robot_driver.publish(base_cmd_);
-      evaluatePosition();
+      //evaluatePosition();
+      imgAcquire();
       r.sleep();
     }  
   }  
@@ -284,9 +285,11 @@ namespace RobotLocalization
   void GPSDrive::imgAcquire()
   {
     sensor_msgs::NavSatFix::ConstPtr filteredGPS_msg=ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/filtered", ros::Duration(10));
-    std::string gps_lat = std::to_string(filteredGPS_msg->latitude);
-    std::string gps_lon = std::to_string(filteredGPS_msg->longitude);
-    std::string filename = gps_lat+"+"+gps_lon;
+    std::stringstream gps_lat;
+    std::stringstream gps_lon;
+    gps_lat<<filteredGPS_msg->latitude;
+    gps_lon<<filteredGPS_msg->longitude;
+    std::string filename = gps_lat.str()+"+"+gps_lon.str();
     std::string gphoto_capture = "gphoto2 --capture-image-and-download --filename="+filename+".jpg";
     system(gphoto_capture.c_str());
   }

@@ -43,7 +43,7 @@ class GPSDrive
     double computeBearing(double x0, double y0, double x1, double y1);
 
     //! member function to evalute the localization accuracy
-    double evalutePosition(bool evaluate);
+    double evaluatePosition();
     //! member function for triggering the canon camer to acquire images
     void imgAcquire();
     //! Variables for current location
