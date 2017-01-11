@@ -284,14 +284,17 @@ namespace RobotLocalization
 
   void GPSDrive::imgAcquire()
   {
-    sensor_msgs::NavSatFix::ConstPtr filteredGPS_msg=ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/filtered", ros::Duration(10));
-    std::stringstream gps_lat;
-    std::stringstream gps_lon;
-    gps_lat<<filteredGPS_msg->latitude;
-    gps_lon<<filteredGPS_msg->longitude;
-    std::string filename = gps_lat.str()+"+"+gps_lon.str();
-    std::string gphoto_capture = "gphoto2 --capture-image-and-download --filename="+filename+".jpg";
-    system(gphoto_capture.c_str());
+    if (evalute_==true && waypoint_arrived_==true)
+    {
+    	sensor_msgs::NavSatFix::ConstPtr filteredGPS_msg=ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/filtered", ros::Duration(10));
+    	std::stringstream gps_lat;
+    	std::stringstream gps_lon;
+    	gps_lat<<filteredGPS_msg->latitude;
+    	gps_lon<<filteredGPS_msg->longitude;
+    	std::string filename = "Desktop/gphoto2test"+gps_lat.str()+"+"+gps_lon.str();
+    	std::string gphoto_capture = "sshpass -p clearpath ssh administrator@precag  gphoto2 --capture-image-and-download --filename="+filename+".jpg";
+        system(gphoto_capture.c_str());
+    }
   }
 
 }
