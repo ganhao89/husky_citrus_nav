@@ -13,8 +13,11 @@ namespace RobotLocalization
     //! Variables for waypoint location
     utm_x_waypoint_(0.0),
     utm_y_waypoint_(0.0),
+    utm_x_waypoint_pre_(0.0),
+    utm_y_waypoint_pre_(0.0),
     waypoint_status_(false),
     waypoint_arrived_(false),
+    waypoint_changed_(false),
     //! Current heading
     tracking_(0.0),
     //! Expected heading
@@ -98,6 +101,11 @@ namespace RobotLocalization
     double y0 = utm_y_current_;
     double x1 = utm_x_waypoint_;
     double y1 = utm_y_waypoint_;
+    if (utm_x_waypoint_pre_ != x1||utm_y_waypoint_pre_ != y1){
+	waypoint_changed_=true;
+    }
+    utm_x_waypoint_pre_ = x1;
+    utm_y_waypoint_pre_ = y1;
     if (x1==0 || y1 ==0){
        x1=x0;
        y1=y0;
@@ -284,16 +292,17 @@ namespace RobotLocalization
 
   void GPSDrive::imgAcquire()
   {
-    if (evalute_==true && waypoint_arrived_==true)
+    if (evalute_==true && waypoint_arrived_==true&&waypoint_changed_==true)
     {
     	sensor_msgs::NavSatFix::ConstPtr filteredGPS_msg=ros::topic::waitForMessage<sensor_msgs::NavSatFix>("/gps/filtered", ros::Duration(10));
     	std::stringstream gps_lat;
     	std::stringstream gps_lon;
     	gps_lat<<filteredGPS_msg->latitude;
     	gps_lon<<filteredGPS_msg->longitude;
-    	std::string filename = "Desktop/gphoto2test"+gps_lat.str()+"+"+gps_lon.str();
+    	std::string filename = "Desktop/gphoto2test/pics/"+gps_lat.str()+"+"+gps_lon.str();
     	std::string gphoto_capture = "sshpass -p clearpath ssh administrator@precag  gphoto2 --capture-image-and-download --filename="+filename+".jpg";
         system(gphoto_capture.c_str());
+        waypoint_changed_=false;
     }
   }
 

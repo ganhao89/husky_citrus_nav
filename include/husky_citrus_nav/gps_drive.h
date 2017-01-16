@@ -52,10 +52,15 @@ class GPSDrive
     //! Variables for waypoint location
     double utm_x_waypoint_;
     double utm_y_waypoint_;
+    //! Variables for old waypoint location
+    double utm_x_waypoint_pre_;
+    double utm_y_waypoint_pre_;
     //! waypoint status: false->not received; true->received
     bool waypoint_status_;
     //! status indicating if the robot has arrived the waypoint
     bool waypoint_arrived_;
+    //! status indicating if waypoint has been reset
+    bool waypoint_changed_;
     //! Current heading
     double tracking_;
     //! Expected heading
