@@ -206,3 +206,13 @@ ADD_DEPENDENCIES(robot_initial_position husky_citrus_nav_generate_messages_cpp)
 add_executable(gps_drive_node src/gps_drive_node.cpp)
 target_link_libraries(gps_drive_node gps_drive ${catkin_LIBRARIES})
 ADD_DEPENDENCIES(gps_drive_node husky_citrus_nav_generate_messages_cpp)
+
+add_executable(camera_frame_broadcaster src/camera_frame_broadcaster.cpp)
+target_link_libraries(camera_frame_broadcaster ${catkin_LIBRARIES})
+ADD_DEPENDENCIES(camera_frame_broadcaster husky_citrus_nav_generate_messages_cpp)
+
+add_executable(laser_frame_broadcaster src/laser_frame_broadcaster.cpp)
+target_link_libraries(laser_frame_broadcaster ${catkin_LIBRARIES})
+ADD_DEPENDENCIES(laser_frame_broadcaster husky_citrus_nav_generate_messages_cpp)
+
+
